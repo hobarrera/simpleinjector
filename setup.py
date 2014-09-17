@@ -10,5 +10,6 @@ setup(
     url='https://github.com/hobarrera/simpleinjector',
     license='ISC',
     description="An extremely simple framework-independent dependency " +
-        "injector."
+        "injector.",
+    requires=["decorator (>=3.4.0)"]
 )

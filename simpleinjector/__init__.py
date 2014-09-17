@@ -1,3 +1,4 @@
+from decorator import decorator
 from functools import wraps
 
 import inspect
@@ -33,7 +34,7 @@ class InjectorConfiguration:
         return InjectorConfiguration.static_arg[name]
 
     @staticmethod
-    def list_static_arg():
+    def list_static_args():
         """Returns a list of all the argument names for static arguments"""
         return list(InjectorConfiguration.static_arg.keys())
 
@@ -76,36 +77,34 @@ class InjectorConfiguration:
         return list(InjectorConfiguration.runtime_arg_pre.keys())
 
 
-def inject(method):
+@decorator
+def inject(func, *args, **kwargs):
     """
     Injects kwargs for which there is a matching args name.
 
     Register what's passed by using Injector.add_param().
     """
 
-    @wraps(method)
-    def wrapper(self, *args, **kwargs):
+    post_runtime_funcs = {}
+    method_args = inspect.getargspec(func).args
 
-        post_runtime_funcs = {}
+    for arg_name in InjectorConfiguration.list_static_args():
+        if arg_name in method_args:
+            value = InjectorConfiguration.get_static_arg(arg_name)
+            kwargs[arg_name] = value
 
-        for arg_name in InjectorConfiguration.list_static_arg():
-            if arg_name in inspect.getargspec(method).args:
-                value = InjectorConfiguration.get_static_arg(arg_name)
-                kwargs[arg_name] = value
+    for arg_name in InjectorConfiguration.list_runtime_args():
+        if arg_name in method_args:
+            funcs = InjectorConfiguration.get_runtime_arg(arg_name)
+            value = funcs[0]()
+            post_runtime_funcs[funcs[1]] = value
+            kwargs[arg_name] = value
 
-        for arg_name in InjectorConfiguration.list_runtime_args():
-            if arg_name in inspect.getargspec(method).args:
-                funcs = InjectorConfiguration.get_runtime_arg(arg_name)
-                value = funcs[0]()
-                post_runtime_funcs[funcs[1]] = value
-                kwargs[arg_name] = value
+    result = func(*args, **kwargs)
 
-        result = method(self, *args, **kwargs)
+    for func, value in post_runtime_funcs.items():
+        if func is not None:
+            func(value)
 
-        for func, value in post_runtime_funcs.items():
-            if func is not None:
-                func(value)
+    return result
 
-        return result
-
-    return wrapper
