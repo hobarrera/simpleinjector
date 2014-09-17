@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='pysimpleinjector',
-    version='1.0.0',
+    version='1.1',
     author='Hugo Osvaldo Barrera',
     author_email='hugo@barrera.io',
     packages=['simpleinjector'],

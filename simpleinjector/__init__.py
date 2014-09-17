@@ -45,7 +45,8 @@ class InjectorConfiguration:
         arguments ``name`` to any decorted functions. ``post`` is executed
         after the decorated function returns.
         ``post`` will only be executed if the decorated function had an
-        argument named ``name``.
+        argument named ``name``. ``post`` will receive the injected value as a
+        single, positional argument.
 
         :arg string name: The name of an argument where a value should be
             injected.
@@ -85,7 +86,7 @@ def inject(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
 
-        post_runtime_funcs = []
+        post_runtime_funcs = {}
 
         for arg_name in InjectorConfiguration.list_static_arg():
             if arg_name in inspect.getargspec(method).args:
@@ -95,14 +96,15 @@ def inject(method):
         for arg_name in InjectorConfiguration.list_runtime_args():
             if arg_name in inspect.getargspec(method).args:
                 funcs = InjectorConfiguration.get_runtime_arg(arg_name)
-                post_runtime_funcs.append(funcs[1])
-                kwargs[arg_name] = funcs[0]()
+                value = funcs[0]()
+                post_runtime_funcs[funcs[1]] = value
+                kwargs[arg_name] = value
 
         result = method(self, *args, **kwargs)
 
-        for func in post_runtime_funcs:
+        for func, value in post_runtime_funcs.items():
             if func is not None:
-                func()
+                func(value)
 
         return result
 

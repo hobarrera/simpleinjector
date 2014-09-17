@@ -5,7 +5,8 @@ def one():
     return "xxx"
 
 
-def two():
+def two(value):
+    assert(value == "xxx")
     InjectorConfiguration.post_ran = True
 
 InjectorConfiguration.add_static_arg("static", "static")
